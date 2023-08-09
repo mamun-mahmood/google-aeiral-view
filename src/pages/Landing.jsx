@@ -68,16 +68,28 @@ const Landing = () => {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          my: 5,
+          my: { xs: 2, md: 5 },
         }}
       >
-        <img
-          width="100"
-          height="100"
-          src="https://seeklogo.com/images/G/google-earth-logo-2C3999EDF5-seeklogo.com.png"
-          alt="logo"
-        />
-        <Typography variant="h4">Google Aerial View API</Typography>
+        <Box
+          sx={{
+            width: { xs: 60, md: 100 },
+          }}
+        >
+          <img
+            width="100%"
+            src="https://seeklogo.com/images/G/google-earth-logo-2C3999EDF5-seeklogo.com.png"
+            alt="logo"
+          />
+        </Box>
+        <Typography
+          variant="h4"
+          sx={{
+            fontSize: { xs: 20, md: 30 },
+          }}
+        >
+          Google Aerial View API
+        </Typography>
       </Box>
       <Box
         onSubmit={handleSearch}
