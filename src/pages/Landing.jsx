@@ -4,14 +4,31 @@ import {
   CircularProgress,
   Container,
   Grid,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   TextField,
   Typography,
 } from "@mui/material";
 import { useState } from "react";
 import VideoCard from "../components/VideoCard";
-import { SearchOutlined } from "@mui/icons-material";
+import { AddCircleOutline, SearchOutlined } from "@mui/icons-material";
 import { fetchAerialVideoByID, renderAerialVideo } from "../api/AeiralApi";
 import Swal from "sweetalert2";
+import VideoTable from "../components/VideoTable";
+const columns = [
+  { id: "address", label: "Address", minWidth: 170 },
+  { id: "state", label: "Status", minWidth: 100 },
+  { id: "videoid", label: "Video ID", minWidth: 100 },
+  { id: "get", label: "Submit", minWidth: 100 },
+];
+
+function createData(address, state, videoid, get) {
+  return { address, state, videoid, get };
+}
 
 const Landing = () => {
   const [aerialVideos, setAerialVideos] = useState([]);
@@ -22,45 +39,85 @@ const Landing = () => {
     isOpen: true,
     type: "success",
   });
-  const handleSearch = async (e) => {
+  const [addresses, setAddresses] = useState([
+    {
+      address: "",
+      isLoading: false,
+      state: "",
+      videoId: "",
+    },
+  ]);
+  const rows = addresses.map((address) => {
+    return createData(address.address, address.state, address.videoId);
+  });
+  const handleSearch = async (e, address) => {
     e.preventDefault();
-    setSearchResult({
-      ...searchResult,
-      isLoading: true,
+    setAddresses((prev) => {
+      const updatedAddresses = [...prev];
+      const index = updatedAddresses.findIndex((a) => a.address === address);
+      updatedAddresses[index].isLoading = true;
+      return updatedAddresses;
     });
-    const data = new FormData(e.currentTarget);
-    const address = data.get("address");
+
     const result = await renderAerialVideo(address);
+
     if (result?.state === "ACTIVE" && result?.metadata) {
       const video = await fetchAerialVideoByID(
         result.metadata.videoId,
         address
       );
+      setAddresses((prev) => {
+        const updatedAddresses = [...prev];
+        const index = updatedAddresses.findIndex((a) => a.address === address);
+        updatedAddresses[index].isLoading = false;
+        updatedAddresses[index].state = result.state;
+        updatedAddresses[index].videoId = result.metadata.videoId;
+        return updatedAddresses;
+      });
       setAerialVideos((prev) => [...prev, video]);
-      setSearchResult({
-        ...searchResult,
-        isLoading: false,
-      });
     } else if (result?.state === "PROCESSING" && result?.metadata) {
-      setSearchResult({
-        ...searchResult,
-        isLoading: false,
-      });
-      Swal.fire("Processing", "Processing video", "info", {
-        showConfirmButton: false,
-        timer: 2000,
+      setAddresses((prev) => {
+        const updatedAddresses = [...prev];
+        const index = updatedAddresses.findIndex((a) => a.address === address);
+        updatedAddresses[index].isLoading = false;
+        updatedAddresses[index].state = result.state;
+        updatedAddresses[index].videoId = result.metadata.videoId;
+        return updatedAddresses;
       });
     } else {
-      Swal.fire("Error", "No video found", "error", {
-        showConfirmButton: false,
-        timer: 2000,
-      });
-      setSearchResult({
-        ...searchResult,
-        isLoading: false,
+      setAddresses((prev) => {
+        const updatedAddresses = [...prev];
+        const index = updatedAddresses.findIndex((a) => a.address === address);
+        updatedAddresses[index].isLoading = false;
+        updatedAddresses[index].state = result.state || "NOT_FOUND";
+        updatedAddresses[index].videoId =
+          result?.metadata?.videoId || "Not found";
+        return updatedAddresses;
       });
     }
   };
+
+  const handleAddAddress = () => {
+    setAddresses([
+      ...addresses,
+      {
+        address: "",
+        isLoading: false,
+        state: "",
+        videoId: "",
+      },
+    ]);
+  };
+
+  const handleAddressChange = (index, value) => {
+    const updatedAddresses = [...addresses];
+    updatedAddresses[index] = {
+      ...updatedAddresses[index],
+      address: value,
+    };
+    setAddresses(updatedAddresses);
+  };
+  console.log(addresses);
   return (
     <Container maxWidth="lg">
       <Box
@@ -68,7 +125,7 @@ const Landing = () => {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          my: { xs: 2, md: 5 },
+          my: { xs: 2, md: 2 },
         }}
       >
         <Box
@@ -91,35 +148,97 @@ const Landing = () => {
           Google Aerial View API
         </Typography>
       </Box>
-      <Box
-        onSubmit={handleSearch}
-        component={"form"}
-        sx={{ mb: 5, display: "flex" }}
+      <Button
+        variant="outlined"
+        startIcon={<AddCircleOutline />}
+        onClick={handleAddAddress}
+        sx={{
+          marginLeft: "auto",
+          display: "flex",
+        }}
       >
-        <TextField
-          fullWidth
-          label="Address"
-          name="address"
-          variant="outlined"
-          required
-        />
-        <Button
-          type="submit"
-          disabled={searchResult.isLoading}
-          startIcon={
-            searchResult.isLoading ? (
-              <CircularProgress size={30} />
-            ) : (
-              <SearchOutlined size={30} />
-            )
-          }
-          variant="contained"
-          size="large"
-          mt={2}
-        >
-          Serach
-        </Button>
-      </Box>
+        Add new address
+      </Button>
+      <TableContainer sx={{ maxHeight: 440 }}>
+        <Table stickyHeader aria-label="sticky table">
+          <TableHead>
+            <TableRow>
+              {columns.map((column) => (
+                <TableCell
+                  key={column.id}
+                  align={column.align}
+                  style={{ minWidth: column.minWidth }}
+                >
+                  {column.label}
+                </TableCell>
+              ))}
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {rows.map((address, index) => {
+              return (
+                <TableRow
+                  hover
+                  tabIndex={-1}
+                  key={index}
+                  sx={{
+                    cursor: "pointer",
+                  }}
+                >
+                  <TextField
+                    fullWidth
+                    label="Address"
+                    variant="outlined"
+                    required
+                    value={address.address}
+                    onChange={(e) => handleAddressChange(index, e.target.value)}
+                    sx={{
+                      mt: 1,
+                    }}
+                  />
+                  <TableCell>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        bgcolor:
+                          address.state === "ACTIVE"
+                            ? "green"
+                            : address.state === "PROCESSING"
+                            ? "red"
+                            : "",
+                        color: "white",
+                        padding: 1,
+                        borderRadius: 2,
+                      }}
+                    >
+                      {address.state}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>{address.videoid}</TableCell>
+                  <TableCell>
+                    <Button
+                      disabled={address.isLoading || !address.address}
+                      startIcon={
+                        address.isLoading ? (
+                          <CircularProgress />
+                        ) : (
+                          <SearchOutlined />
+                        )
+                      }
+                      variant="outlined"
+                      // mt={2}
+                      onClick={(e) => handleSearch(e, address.address)}
+                    >
+                      Submit
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </TableContainer>
+
       {/* <VideoTable videos={videos} /> */}
       <Grid container spacing={2} my={3}>
         {aerialVideos.map((video, i) => (

@@ -4,6 +4,7 @@ import {
   Card,
   CardContent,
   CardMedia,
+  Divider,
   Typography,
 } from "@mui/material";
 
@@ -34,22 +35,31 @@ const VideoCard = ({ video }) => {
           poster={landscapeUri} // Use the thumbnail as a poster image
           sx={{ height: "auto", width: "100%" }}
         />
-        <CardContent
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <Box>
-            <Typography variant="h6" component="div">
-              Address: {address}
+        <CardContent>
+          <Typography variant="h6" component="div">
+            {address}
+          </Typography>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <Divider sx={{ my: 1 }} />
+            <Typography
+              variant="body1"
+              sx={{
+                width: "70%",
+                wordWrap: "break-word",
+              }}
+            >
+              {videoId}
             </Typography>
-            <Typography variant="body1">Video ID: {videoId}</Typography>
+            <Button variant="contained" size="large" onClick={handleDownload}>
+              Download
+            </Button>
           </Box>
-          <Button variant="contained" onClick={handleDownload}>
-            Download
-          </Button>
         </CardContent>
       </Card>
     </Box>
